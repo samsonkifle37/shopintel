@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { AdCreative, Alert, CommerceShop, Creator, ExternalProduct, PrismaClient, SupplierOffer } from "@prisma/client";
 
 export class IntelligenceService {
   constructor(private readonly prisma: PrismaClient) {}
@@ -16,7 +16,7 @@ export class IntelligenceService {
     if (tiktok.length > 0) {
       return {
         dataMode: "live",
-        items: tiktok.map((item) => ({
+        items: tiktok.map((item: ExternalProduct) => ({
           id: item.externalProductId ?? item.id,
           title: item.title,
           channels: ["TIKTOK_SHOP"],
@@ -71,9 +71,9 @@ export class IntelligenceService {
     if (connection?.status === "ENABLED") {
       return {
         dataMode: "live",
-        topProducts: topProducts.map((item) => item.title),
-        topCreators: topCreators.map((item) => item.name),
-        risingShops: risingShops.map((item) => item.displayName ?? item.handle)
+        topProducts: topProducts.map((item: ExternalProduct) => item.title),
+        topCreators: topCreators.map((item: Creator) => item.name),
+        risingShops: risingShops.map((item: CommerceShop) => item.displayName ?? item.handle)
       };
     }
 
@@ -95,7 +95,7 @@ export class IntelligenceService {
     if (shops.length > 0) {
       return {
         dataMode: "live",
-        items: shops.map((shop) => ({
+        items: shops.map((shop: CommerceShop) => ({
           name: shop.displayName ?? shop.handle,
           channel: shop.kind === "EXTERNAL_TIKTOK" ? "TIKTOK_SHOP" : "SHOPIFY",
           productCount: shop.productCount,
@@ -122,7 +122,7 @@ export class IntelligenceService {
     if (creators.length > 0) {
       return {
         dataMode: "live",
-        items: creators.map((creator) => ({
+        items: creators.map((creator: Creator) => ({
           name: creator.name,
           niche: creator.niche ?? "General",
           engagementRate: Number(creator.engagementRate),
@@ -149,7 +149,7 @@ export class IntelligenceService {
     if (ads.length > 0) {
       return {
         dataMode: "live",
-        items: ads.map((ad) => ({
+        items: ads.map((ad: AdCreative) => ({
           name: ad.creativeType ?? "Ad creative",
           hook: ad.hookText ?? "N/A",
           platform: ad.platform,
@@ -177,7 +177,7 @@ export class IntelligenceService {
     if (offers.length > 0) {
       return {
         dataMode: "live",
-        offers: offers.map((offer) => ({
+        offers: offers.map((offer: SupplierOffer & { supplier: { name: string }; externalProduct: { title: string } | null; product: { title: string } | null }) => ({
           product: offer.product?.title ?? offer.externalProduct?.title ?? offer.productTitle,
           supplier: offer.supplier.name,
           landedCost: Number(offer.landedCost),
@@ -204,7 +204,7 @@ export class IntelligenceService {
     if (alerts.length > 0) {
       return {
         dataMode: "live",
-        items: alerts.map((alert) => ({
+        items: alerts.map((alert: Alert) => ({
           type: alert.type,
           entity: alert.title,
           severity: alert.severity
