@@ -1,6 +1,6 @@
 import { Queue } from "bullmq";
 import { env } from "../config";
-import { JobName } from "@spi/shared/jobs";
+import { JobName } from "./job-names";
 
 const connection = {
   url: env.REDIS_URL

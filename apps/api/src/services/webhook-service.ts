@@ -1,7 +1,7 @@
 import { createHash } from "crypto";
 import { PrismaClient } from "@prisma/client";
 import { syncQueue } from "../lib/queue";
-import { JobName } from "@spi/shared/jobs";
+import { JobName } from "../lib/job-names";
 
 type HandleWebhookInput = {
   topic: string;

@@ -1,5 +1,5 @@
 import { analyticsQueue, syncQueue, tiktokQueue } from "../lib/queue";
-import { JobName } from "@spi/shared/jobs";
+import { JobName } from "../lib/job-names";
 
 export class JobService {
   async enqueueInitialSync(shopDomain: string) {

@@ -2,7 +2,7 @@ import { createHash, createHmac, timingSafeEqual } from "crypto";
 import { PrismaClient } from "@prisma/client";
 import { env } from "../../config";
 import { webhookDeadLetterQueue, webhookRetryQueue, tiktokQueue } from "../../lib/queue";
-import { JobName } from "@spi/shared/jobs";
+import { JobName } from "../../lib/job-names";
 
 type IngestWebhookInput = {
   shopId: string;

@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
-import { JobName } from "@spi/shared/jobs";
-import { featureFlags } from "@spi/shared/feature-flags";
+import { JobName } from "../../lib/job-names";
+import { featureFlags } from "../../lib/feature-flags";
 import { tiktokQueue } from "../../lib/queue";
 import { TikTokAuthService } from "./tiktok-auth-service";
 import { TikTokNormalizer } from "./tiktok-normalizer";
