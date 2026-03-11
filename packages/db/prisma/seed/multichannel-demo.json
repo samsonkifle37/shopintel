@@ -1,0 +1,168 @@
+{
+  "shop": {
+    "id": "shop_demo_001",
+    "domain": "demo-ops.myshopify.com",
+    "name": "Demo Commerce Ops"
+  },
+  "channels": [
+    { "id": "ch_shopify", "type": "SHOPIFY", "status": "ENABLED" },
+    { "id": "ch_tiktok", "type": "TIKTOK_SHOP", "status": "ENABLED" },
+    { "id": "ch_dropship", "type": "DROPSHIP", "status": "ENABLED" }
+  ],
+  "kpis": [
+    { "date": "2026-03-11", "revenue": 42800, "orders": 611, "units": 951, "aov": 67.98, "margin": 29.6, "alerts": 19 },
+    { "date": "2026-03-10", "revenue": 37900, "orders": 599, "units": 934, "aov": 68.42, "margin": 29.1, "alerts": 17 }
+  ],
+  "products": [
+    {
+      "id": "p_1001",
+      "title": "Ice Silk Posture Tee",
+      "channels": ["SHOPIFY", "TIKTOK_SHOP"],
+      "price": 39.99,
+      "landedCost": 11.8,
+      "trendScore": 93,
+      "demandScore": 88,
+      "competitionScore": 41
+    },
+    {
+      "id": "p_1002",
+      "title": "Magnetic Meal Prep Set",
+      "channels": ["TIKTOK_SHOP"],
+      "price": 29.5,
+      "landedCost": 9.4,
+      "trendScore": 89,
+      "demandScore": 84,
+      "competitionScore": 38
+    }
+  ],
+  "commerceShops": [
+    {
+      "id": "ext_shop_001",
+      "kind": "EXTERNAL_SHOPIFY",
+      "handle": "urbanpeakgear",
+      "countryCode": "US",
+      "productCount": 420
+    },
+    {
+      "id": "ext_shop_002",
+      "kind": "EXTERNAL_TIKTOK",
+      "handle": "vibekitchenlive",
+      "countryCode": "US",
+      "productCount": 190
+    }
+  ],
+  "creators": [
+    {
+      "id": "cr_001",
+      "name": "FitWithNaya",
+      "niche": "Fitness",
+      "followerBand": "100K-250K",
+      "engagementRate": 7.2,
+      "trendScore": 88
+    },
+    {
+      "id": "cr_002",
+      "name": "HomeLabHack",
+      "niche": "Home",
+      "followerBand": "250K-500K",
+      "engagementRate": 6.8,
+      "trendScore": 77
+    }
+  ],
+  "ads": [
+    {
+      "id": "ad_001",
+      "platform": "TikTok",
+      "hookText": "Pain point first",
+      "ctaText": "Shop now",
+      "trendStatus": "RISING",
+      "linkedProductId": "p_1001"
+    },
+    {
+      "id": "ad_002",
+      "platform": "TikTok",
+      "hookText": "Price objection bust",
+      "ctaText": "Buy today",
+      "trendStatus": "BREAKOUT",
+      "linkedProductId": "p_1002"
+    }
+  ],
+  "suppliers": [
+    {
+      "id": "sup_001",
+      "connectorKey": "alibaba",
+      "name": "Alibaba Direct #W-74",
+      "rating": 4.8,
+      "warehouseCountry": "US"
+    },
+    {
+      "id": "sup_002",
+      "connectorKey": "cjdropshipping",
+      "name": "CJdropshipping ZN-13",
+      "rating": 4.6,
+      "warehouseCountry": "UK"
+    }
+  ],
+  "supplierOffers": [
+    {
+      "id": "offer_001",
+      "productId": "p_1001",
+      "supplierId": "sup_001",
+      "unitCost": 7.2,
+      "shippingCost": 2.5,
+      "landedCost": 9.7,
+      "etaMinDays": 6,
+      "etaMaxDays": 8,
+      "isRecommended": true
+    },
+    {
+      "id": "offer_002",
+      "productId": "p_1002",
+      "supplierId": "sup_002",
+      "unitCost": 6.7,
+      "shippingCost": 2.2,
+      "landedCost": 8.9,
+      "etaMinDays": 5,
+      "etaMaxDays": 7,
+      "isRecommended": false
+    }
+  ],
+  "recommendations": [
+    {
+      "id": "rec_001",
+      "title": "Source cheaper supplier for Ice Silk Posture Tee",
+      "type": "SOURCE_CHEAPER_SUPPLIER",
+      "priority": "HIGH",
+      "confidence": 0.88,
+      "impact": "+7.2 margin points"
+    },
+    {
+      "id": "rec_002",
+      "title": "Push Magnetic Meal Prep Set to Shopify draft",
+      "type": "PUSH_TO_SHOPIFY",
+      "priority": "HIGH",
+      "confidence": 0.81,
+      "impact": "$24K 30d potential"
+    }
+  ],
+  "alerts": [
+    {
+      "id": "alert_001",
+      "type": "LOW_INVENTORY",
+      "severity": "CRITICAL",
+      "entity": "Ice Silk Posture Tee / Variant V2"
+    },
+    {
+      "id": "alert_002",
+      "type": "CREATOR_BREAKOUT",
+      "severity": "HIGH",
+      "entity": "FitWithNaya"
+    }
+  ],
+  "watchlists": [
+    { "id": "wl_001", "entityType": "PRODUCT", "productId": "p_1001" },
+    { "id": "wl_002", "entityType": "CREATOR", "creatorId": "cr_001" },
+    { "id": "wl_003", "entityType": "AD", "adId": "ad_001" },
+    { "id": "wl_004", "entityType": "SHOP", "commerceShopId": "ext_shop_002" }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "name": "shopify-product-intelligence-suite",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@10.6.1",
+  "scripts": {
+    "dev": "pnpm -r --parallel dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "prisma:generate": "pnpm --filter @spi/db prisma:generate",
+    "prisma:migrate": "pnpm --filter @spi/db prisma:migrate"
+  }
+}

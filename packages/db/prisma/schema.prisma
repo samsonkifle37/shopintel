@@ -1,0 +1,815 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ChannelType {
+  SHOPIFY
+  TIKTOK_SHOP
+  DROPSHIP
+}
+
+enum ShopKind {
+  INTERNAL
+  EXTERNAL_SHOPIFY
+  EXTERNAL_TIKTOK
+}
+
+enum IntegrationStatus {
+  ENABLED
+  DISABLED
+  PENDING
+  ERROR
+}
+
+enum AlertSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum RecommendationStatus {
+  OPEN
+  ACCEPTED
+  DISMISSED
+  SNOOZED
+  ASSIGNED
+}
+
+model Shop {
+  id                 String             @id @default(cuid())
+  shopifyShopId      String?            @unique
+  domain             String             @unique
+  name               String?
+  email              String?
+  currencyCode       String?
+  planName           String?
+  timezone           String?
+  offlineAccessToken String
+  scopes             String
+  installedAt        DateTime           @default(now())
+  uninstalledAt      DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  users              User[]
+  sessions           ShopSession[]
+  collections        Collection[]
+  products           Product[]
+  variants           Variant[]
+  customers          Customer[]
+  orders             Order[]
+  inventoryLevels    InventoryLevel[]
+  productSnapshots   ProductSnapshot[]
+  trendSnapshots     TrendSnapshot[]
+  trackedEntities    TrackedEntity[]
+  competitorStores   CompetitorStore[]
+  recommendations    Recommendation[]
+  alerts             Alert[]
+  subscriptions      Subscription[]
+  auditLogs          AuditLog[]
+  webhookDeliveries  WebhookDelivery[]
+  kpiSnapshots       KpiSnapshot[]
+  reportRuns         ReportRun[]
+  channels           Channel[]
+  commerceShops      CommerceShop[]
+  externalProducts   ExternalProduct[]
+  sourceSuppliers    SourceSupplier[]
+  supplierOffers     SupplierOffer[]
+  importJobs         ImportJob[]
+  productChannelMetrics ProductChannelMetric[]
+  creatorProductLinks   CreatorProductLink[]
+  adProductLinks        AdProductLink[]
+  watchlists            Watchlist[]
+  creators              Creator[]
+  ads                   AdCreative[]
+  tikTokConnection      TikTokConnection?
+  tikTokWebhookEvents   TikTokWebhookEvent[]
+  tikTokSyncRuns        TikTokSyncRun[]
+}
+
+model User {
+  id        String   @id @default(cuid())
+  shopId    String
+  email     String
+  firstName String?
+  lastName  String?
+  role      String   @default("ADMIN")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  shop      Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@unique([shopId, email])
+}
+
+model ShopSession {
+  id          String   @id @default(cuid())
+  shopId      String
+  sessionId   String   @unique
+  isOnline    Boolean
+  accessToken String
+  scope       String?
+  expiresAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  shop        Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+}
+
+model Collection {
+  id             String   @id @default(cuid())
+  shopId         String
+  shopifyId      String
+  title          String
+  handle         String?
+  type           String
+  sortOrder      String?
+  seoTitle       String?
+  seoDescription String?
+  status         String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  shop           Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  products       ProductCollection[]
+
+  @@unique([shopId, shopifyId])
+}
+
+model Product {
+  id                  String   @id @default(cuid())
+  shopId              String
+  shopifyId           String
+  title               String
+  handle              String?
+  vendor              String?
+  productType         String?
+  status              String?
+  tags                String[]
+  publishedAt         DateTime?
+  launchedAt          DateTime?
+  featuredImageUrl    String?
+  seoTitle            String?
+  seoDescription      String?
+  totalRevenue        Decimal  @default(0)
+  totalUnitsSold      Int      @default(0)
+  grossMarginEstimate Decimal  @default(0)
+  inventoryOnHand     Int      @default(0)
+  opportunityScore    Int      @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  shop                Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  variants            Variant[]
+  collections         ProductCollection[]
+  snapshots           ProductSnapshot[]
+  externalMappings    ExternalProduct[]
+  channelMetrics      ProductChannelMetric[]
+  creatorLinks        CreatorProductLink[]
+  adLinks             AdProductLink[]
+  supplierOffers      SupplierOffer[]
+  watchlists          Watchlist[]
+
+  @@unique([shopId, shopifyId])
+  @@index([shopId, opportunityScore])
+}
+
+model Variant {
+  id                String   @id @default(cuid())
+  shopId            String
+  productId         String
+  shopifyId         String
+  inventoryItemId   String?
+  sku               String?
+  title             String
+  price             Decimal  @default(0)
+  compareAtPrice    Decimal?
+  cost              Decimal?
+  inventoryQuantity Int      @default(0)
+  unitsSold         Int      @default(0)
+  revenue           Decimal  @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  shop              Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  product           Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  inventoryLevels   InventoryLevel[]
+  orderLineItems    OrderLineItem[]
+
+  @@unique([shopId, shopifyId])
+}
+
+model ProductCollection {
+  productId    String
+  collectionId String
+  product      Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  @@id([productId, collectionId])
+}
+
+model Customer {
+  id          String   @id @default(cuid())
+  shopId      String
+  shopifyId   String
+  email       String?
+  ordersCount Int      @default(0)
+  totalSpent  Decimal  @default(0)
+  lastOrderAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  shop        Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  orders      Order[]
+
+  @@unique([shopId, shopifyId])
+}
+
+model Order {
+  id                String    @id @default(cuid())
+  shopId            String
+  customerId        String?
+  shopifyId         String
+  orderNumber       String?
+  currencyCode      String?
+  subtotalPrice     Decimal   @default(0)
+  totalPrice        Decimal   @default(0)
+  totalTax          Decimal   @default(0)
+  totalDiscounts    Decimal   @default(0)
+  totalRefunded     Decimal   @default(0)
+  financialStatus   String?
+  fulfillmentStatus String?
+  createdAt         DateTime
+  updatedAt         DateTime  @updatedAt
+  shop              Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  customer          Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  lineItems         OrderLineItem[]
+
+  @@unique([shopId, shopifyId])
+  @@index([shopId, createdAt])
+}
+
+model OrderLineItem {
+  id                String   @id @default(cuid())
+  orderId           String
+  variantId         String?
+  shopifyLineItemId String
+  title             String
+  sku               String?
+  quantity          Int
+  totalPrice        Decimal  @default(0)
+  discountAmount    Decimal  @default(0)
+  refundedQuantity  Int      @default(0)
+  order             Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  variant           Variant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+
+  @@unique([orderId, shopifyLineItemId])
+}
+
+model InventoryLevel {
+  id         String   @id @default(cuid())
+  shopId     String
+  variantId  String
+  locationId String
+  available  Int
+  updatedAt  DateTime @updatedAt
+  shop       Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  variant    Variant  @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@unique([variantId, locationId])
+}
+
+model ProductSnapshot {
+  id                  String   @id @default(cuid())
+  shopId              String
+  productId           String
+  snapshotDate        DateTime
+  revenue30d          Decimal  @default(0)
+  units30d            Int      @default(0)
+  inventoryOnHand     Int      @default(0)
+  addToCartRateProxy  Decimal  @default(0)
+  conversionRateProxy Decimal  @default(0)
+  refundRateProxy     Decimal  @default(0)
+  createdAt           DateTime @default(now())
+  shop                Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  product             Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, snapshotDate])
+}
+
+model TrendSnapshot {
+  id               String   @id @default(cuid())
+  shopId           String
+  entityType       String
+  entityId         String
+  snapshotDate     DateTime
+  trendScore       Int
+  demandVelocity   Decimal  @default(0)
+  acceleration     Decimal  @default(0)
+  seasonalityIndex Decimal  @default(0)
+  stockoutRisk     Decimal  @default(0)
+  createdAt        DateTime @default(now())
+  shop             Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@index([shopId, entityType, snapshotDate])
+}
+
+model Channel {
+  id            String            @id @default(cuid())
+  shopId        String
+  type          ChannelType
+  status        IntegrationStatus @default(PENDING)
+  accountRef    String?
+  metadataJson  String?
+  lastSyncAt    DateTime?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  shop          Shop              @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  metrics       ProductChannelMetric[]
+  externalShops CommerceShop[]
+  externalProducts ExternalProduct[]
+  importJobs    ImportJob[]
+  tikTokConnection TikTokConnection?
+
+  @@unique([shopId, type, accountRef])
+}
+
+model TikTokConnection {
+  id                   String            @id @default(cuid())
+  shopId               String            @unique
+  channelId            String?           @unique
+  status               IntegrationStatus @default(PENDING)
+  merchantId           String?
+  shopCipher           String?
+  shopName             String?
+  region               String?
+  accessTokenCipher    String?
+  refreshTokenCipher   String?
+  tokenExpiresAt       DateTime?
+  refreshExpiresAt     DateTime?
+  tokenLastRotatedAt   DateTime?
+  lastSyncAt           DateTime?
+  lastFullSyncAt       DateTime?
+  lastError            String?
+  reconnectRequired    Boolean           @default(false)
+  metadataJson         String?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  shop                 Shop              @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  channel              Channel?          @relation(fields: [channelId], references: [id], onDelete: SetNull)
+  syncRuns             TikTokSyncRun[]
+  webhookEvents        TikTokWebhookEvent[]
+
+  @@index([status, lastSyncAt])
+}
+
+model TikTokWebhookEvent {
+  id                   String   @id @default(cuid())
+  shopId               String
+  connectionId         String?
+  deliveryId           String
+  eventType            String
+  eventAt              DateTime?
+  signature            String?
+  signatureValid       Boolean  @default(false)
+  payloadJson          String
+  payloadHash          String
+  processStatus        String   @default("PENDING")
+  attempts             Int      @default(0)
+  lastError            String?
+  nextAttemptAt        DateTime?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  shop                 Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  connection           TikTokConnection? @relation(fields: [connectionId], references: [id], onDelete: SetNull)
+
+  @@unique([shopId, deliveryId])
+  @@index([shopId, processStatus, nextAttemptAt])
+}
+
+model TikTokSyncRun {
+  id                   String   @id @default(cuid())
+  shopId               String
+  connectionId         String?
+  runType              String
+  status               String
+  trigger              String
+  startedAt            DateTime @default(now())
+  finishedAt           DateTime?
+  syncedProducts       Int      @default(0)
+  syncedOrders         Int      @default(0)
+  syncedMetrics        Int      @default(0)
+  errorMessage         String?
+  metadataJson         String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  shop                 Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  connection           TikTokConnection? @relation(fields: [connectionId], references: [id], onDelete: SetNull)
+
+  @@index([shopId, runType, status, startedAt])
+}
+
+model CommerceShop {
+  id                    String            @id @default(cuid())
+  shopId                String
+  channelId             String?
+  kind                  ShopKind
+  externalShopId        String?
+  handle                String
+  displayName           String?
+  countryCode           String?
+  productCount          Int               @default(0)
+  estimatedActivity     Int               @default(0)
+  topCategories         String[]
+  catalogGrowthRate     Decimal           @default(0)
+  priceMovementRate     Decimal           @default(0)
+  watchlisted           Boolean           @default(false)
+  lastObservedAt        DateTime?
+  metadataJson          String?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  shop                  Shop              @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  channel               Channel?          @relation(fields: [channelId], references: [id], onDelete: SetNull)
+  externalProducts      ExternalProduct[]
+  watchlists            Watchlist[]
+
+  @@index([shopId, kind, watchlisted])
+}
+
+model Creator {
+  id                String   @id @default(cuid())
+  shopId            String
+  externalCreatorId String?
+  name              String
+  niche             String?
+  followerBand      String?
+  engagementRate    Decimal  @default(0)
+  contentVelocity   Decimal  @default(0)
+  winRate           Decimal  @default(0)
+  trendScore        Int      @default(0)
+  linkedShopsCount  Int      @default(0)
+  linkedProductsCount Int    @default(0)
+  watchlisted       Boolean  @default(false)
+  metadataJson      String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  shop              Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  productLinks      CreatorProductLink[]
+  ads               AdCreative[]
+  watchlists        Watchlist[]
+
+  @@index([shopId, trendScore, watchlisted])
+}
+
+model AdCreative {
+  id                String   @id @default(cuid())
+  shopId            String
+  externalAdId      String?
+  creatorId         String?
+  platform          String
+  creativeType      String?
+  thumbnailUrl      String?
+  videoUrl          String?
+  hookText          String?
+  ctaText           String?
+  durationSeconds   Int?
+  trendStatus       String?
+  engagementScore   Decimal  @default(0)
+  metadataJson      String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  shop              Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  creator           Creator? @relation(fields: [creatorId], references: [id], onDelete: SetNull)
+  productLinks      AdProductLink[]
+  watchlists        Watchlist[]
+
+  @@index([shopId, trendStatus])
+}
+
+model ExternalProduct {
+  id                    String   @id @default(cuid())
+  shopId                String
+  channelId             String?
+  commerceShopId        String?
+  internalProductId     String?
+  externalProductId     String?
+  title                 String
+  category              String?
+  thumbnailUrl          String?
+  price                 Decimal  @default(0)
+  landedCostEstimate    Decimal  @default(0)
+  marginEstimate        Decimal  @default(0)
+  trendScore            Int      @default(0)
+  competitionScore      Int      @default(0)
+  demandScore           Int      @default(0)
+  sourceReady           Boolean  @default(false)
+  metadataJson          String?
+  lastObservedAt        DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  shop                  Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  channel               Channel? @relation(fields: [channelId], references: [id], onDelete: SetNull)
+  commerceShop          CommerceShop? @relation(fields: [commerceShopId], references: [id], onDelete: SetNull)
+  internalProduct       Product? @relation(fields: [internalProductId], references: [id], onDelete: SetNull)
+  supplierOffers        SupplierOffer[]
+  creatorLinks          CreatorProductLink[]
+  adLinks               AdProductLink[]
+  watchlists            Watchlist[]
+
+  @@unique([shopId, externalProductId])
+  @@index([shopId, trendScore, sourceReady])
+}
+
+model SourceSupplier {
+  id                String            @id @default(cuid())
+  shopId            String
+  connectorKey      String
+  name              String
+  supplierCode      String?
+  rating            Decimal           @default(0)
+  warehouseCountry  String?
+  defaultMoq        Int?
+  status            IntegrationStatus @default(PENDING)
+  metadataJson      String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  shop              Shop              @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  offers            SupplierOffer[]
+  importJobs        ImportJob[]
+
+  @@unique([shopId, connectorKey, supplierCode])
+}
+
+model SupplierOffer {
+  id                String   @id @default(cuid())
+  shopId            String
+  productId         String?
+  externalProductId String?
+  supplierId        String
+  supplierSku       String?
+  productTitle      String
+  unitCost          Decimal  @default(0)
+  shippingCost      Decimal  @default(0)
+  landedCost        Decimal  @default(0)
+  etaMinDays        Int?
+  etaMaxDays        Int?
+  moq               Int?
+  score             Int      @default(0)
+  isRecommended     Boolean  @default(false)
+  metadataJson      String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  shop              Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  product           Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  externalProduct   ExternalProduct? @relation(fields: [externalProductId], references: [id], onDelete: SetNull)
+  supplier          SourceSupplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@index([shopId, isRecommended, score])
+}
+
+model ImportJob {
+  id                String            @id @default(cuid())
+  shopId            String
+  channelId         String?
+  supplierId        String?
+  jobType           String
+  status            String
+  payloadJson       String?
+  resultJson        String?
+  startedAt         DateTime?
+  completedAt       DateTime?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  shop              Shop              @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  channel           Channel?          @relation(fields: [channelId], references: [id], onDelete: SetNull)
+  supplier          SourceSupplier?   @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+
+  @@index([shopId, jobType, status])
+}
+
+model ProductChannelMetric {
+  id                  String      @id @default(cuid())
+  shopId              String
+  productId           String
+  channelId           String
+  snapshotDate        DateTime
+  revenue             Decimal     @default(0)
+  unitsSold           Int         @default(0)
+  trendScore          Int         @default(0)
+  demandScore         Int         @default(0)
+  competitionScore    Int         @default(0)
+  engagementScore     Decimal     @default(0)
+  conversionProxy     Decimal     @default(0)
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+  shop                Shop        @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  product             Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  channel             Channel     @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, channelId, snapshotDate])
+  @@index([shopId, snapshotDate, trendScore])
+}
+
+model CreatorProductLink {
+  id                  String            @id @default(cuid())
+  shopId              String
+  creatorId           String
+  productId           String?
+  externalProductId   String?
+  evidenceType        String?
+  linkedAt            DateTime          @default(now())
+  score               Int               @default(0)
+  shop                Shop              @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  creator             Creator           @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  product             Product?          @relation(fields: [productId], references: [id], onDelete: SetNull)
+  externalProduct     ExternalProduct?  @relation(fields: [externalProductId], references: [id], onDelete: SetNull)
+
+  @@index([shopId, creatorId, linkedAt])
+}
+
+model AdProductLink {
+  id                  String            @id @default(cuid())
+  shopId              String
+  adId                String
+  productId           String?
+  externalProductId   String?
+  angleTag            String?
+  linkedAt            DateTime          @default(now())
+  score               Int               @default(0)
+  shop                Shop              @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  ad                  AdCreative        @relation(fields: [adId], references: [id], onDelete: Cascade)
+  product             Product?          @relation(fields: [productId], references: [id], onDelete: SetNull)
+  externalProduct     ExternalProduct?  @relation(fields: [externalProductId], references: [id], onDelete: SetNull)
+
+  @@index([shopId, adId, linkedAt])
+}
+
+model Watchlist {
+  id                String   @id @default(cuid())
+  shopId            String
+  entityType        String
+  entityId          String?
+  productId         String?
+  externalProductId String?
+  commerceShopId    String?
+  creatorId         String?
+  adId              String?
+  source            String?
+  isActive          Boolean  @default(true)
+  metadataJson      String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  shop              Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  product           Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  externalProduct   ExternalProduct? @relation(fields: [externalProductId], references: [id], onDelete: SetNull)
+  commerceShop      CommerceShop? @relation(fields: [commerceShopId], references: [id], onDelete: SetNull)
+  creator           Creator? @relation(fields: [creatorId], references: [id], onDelete: SetNull)
+  ad                AdCreative? @relation(fields: [adId], references: [id], onDelete: SetNull)
+
+  @@index([shopId, entityType, isActive])
+}
+
+model TrackedEntity {
+  id              String   @id @default(cuid())
+  shopId          String
+  entityType      String
+  entityId        String
+  label           String
+  alertConfigJson String
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  shop            Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@index([shopId, entityType, entityId])
+}
+
+model CompetitorStore {
+  id            String   @id @default(cuid())
+  shopId        String
+  url           String
+  name          String?
+  status        String   @default("DISABLED")
+  lastCheckedAt DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  shop          Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  snapshots     CompetitorSnapshot[]
+}
+
+model CompetitorSnapshot {
+  id                String          @id @default(cuid())
+  competitorStoreId String
+  snapshotDate      DateTime
+  pageType          String
+  pageUrl           String
+  checksum          String
+  summary           String?
+  createdAt         DateTime        @default(now())
+  competitorStore   CompetitorStore @relation(fields: [competitorStoreId], references: [id], onDelete: Cascade)
+}
+
+model Recommendation {
+  id                 String   @id @default(cuid())
+  shopId             String
+  entityType         String
+  entityId           String
+  category           String
+  title              String
+  rationale          String
+  estimatedImpact    String
+  confidenceScore    Decimal  @default(0)
+  priority           Int      @default(0)
+  requiredInputsJson String
+  actionPlanJson     String?
+  status             RecommendationStatus @default(OPEN)
+  channelType        ChannelType?
+  evidenceJson       String?
+  assignedToUserId   String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  shop               Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@index([shopId, status, priority])
+}
+
+model Alert {
+  id              String   @id @default(cuid())
+  shopId          String
+  trackedEntityId String?
+  type            String
+  severity        AlertSeverity
+  title           String
+  body            String
+  status          String   @default("OPEN")
+  channel         String
+  sentAt          DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  shop            Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@index([shopId, status, createdAt])
+}
+
+model Subscription {
+  id                    String   @id @default(cuid())
+  shopId                String
+  shopifySubscriptionId String?  @unique
+  planTier              String
+  status                String
+  currentPeriodEnd      DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  shop                  Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  shopId       String
+  actorType    String
+  actorId      String?
+  action       String
+  metadataJson String?
+  createdAt    DateTime @default(now())
+  shop         Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@index([shopId, createdAt])
+}
+
+model WebhookDelivery {
+  id          String   @id @default(cuid())
+  shopId      String?
+  deliveryId  String   @unique
+  topic       String
+  payloadHash String
+  receivedAt  DateTime @default(now())
+  shop        Shop?    @relation(fields: [shopId], references: [id], onDelete: SetNull)
+}
+
+model KpiSnapshot {
+  id                  String   @id @default(cuid())
+  shopId              String
+  snapshotDate        DateTime
+  revenue             Decimal  @default(0)
+  orders              Int      @default(0)
+  unitsSold           Int      @default(0)
+  averageOrderValue   Decimal  @default(0)
+  grossMarginEstimate Decimal  @default(0)
+  repeatPurchaseRate  Decimal  @default(0)
+  createdAt           DateTime @default(now())
+  shop                Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@unique([shopId, snapshotDate])
+}
+
+model ReportRun {
+  id           String   @id @default(cuid())
+  shopId       String
+  reportType   String
+  status       String
+  outputUrl    String?
+  scheduledFor DateTime?
+  completedAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  shop         Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+}
