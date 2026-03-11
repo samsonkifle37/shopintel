@@ -46,7 +46,7 @@ services:
     runtime: node
     rootDir: .
     plan: starter
-    buildCommand: pnpm install --frozen-lockfile && pnpm --filter @spi/worker build
+    buildCommand: pnpm install --frozen-lockfile && pnpm prisma:generate && pnpm --filter @spi/worker build
     startCommand: node apps/worker/dist/worker.js
     envVars:
       - key: NODE_ENV

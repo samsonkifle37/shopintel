@@ -1,4 +1,4 @@
-import { Queue, Worker } from "bullmq";
+import { Job, Queue, Worker } from "bullmq";
 import { PrismaClient } from "@prisma/client";
 import { JobName } from "@spi/shared/jobs";
 import { createDecipheriv, createCipheriv, createHash, randomBytes } from "crypto";
@@ -10,6 +10,25 @@ const prisma = new PrismaClient();
 const tiktokSyncQueue = new Queue("tiktok-sync", { connection });
 const webhookRetryQueue = new Queue(JobName.TikTokWebhookRetry, { connection });
 const webhookDeadLetterQueue = new Queue(JobName.TikTokWebhookDeadLetter, { connection });
+
+type ShopAuditJobData = {
+  shopId?: string;
+};
+
+type TikTokSyncJobData = {
+  shopId: string;
+  trigger?: string;
+  webhookEventId?: string;
+};
+
+type WebhookRetryJobData = {
+  webhookEventId: string;
+};
+
+type DeadLetterJobData = {
+  webhookEventId: string;
+  reason: string;
+};
 
 const encryptionKey = createHash("sha256")
   .update(process.env.TOKEN_ENCRYPTION_KEY ?? "dev-only-key")
@@ -212,8 +231,8 @@ async function syncTikTok(shopId: string, runType: "INITIAL" | "INCREMENTAL" | "
 
 const shopWorker = new Worker(
   JobName.SyncShop,
-  async (job) => {
-    const shopId = String((job.data as { shopId?: string }).shopId ?? "dev-shop");
+  async (job: Job<ShopAuditJobData>) => {
+    const shopId = String(job.data.shopId ?? "dev-shop");
     await prisma.auditLog.create({
       data: {
         shopId,
@@ -228,8 +247,8 @@ const shopWorker = new Worker(
 
 const tiktokWorker = new Worker(
   "tiktok-sync",
-  async (job) => {
-    const data = job.data as { shopId: string; trigger?: string; webhookEventId?: string };
+  async (job: Job<TikTokSyncJobData>) => {
+    const data = job.data;
     if (job.name === JobName.TikTokInitialSync) {
       await syncTikTok(data.shopId, "INITIAL", data.trigger ?? "oauth");
       return;
@@ -259,8 +278,8 @@ const tiktokWorker = new Worker(
 
 const webhookRetryWorker = new Worker(
   JobName.TikTokWebhookRetry,
-  async (job) => {
-    const data = job.data as { webhookEventId: string };
+  async (job: Job<WebhookRetryJobData>) => {
+    const data = job.data;
     const event = await prisma.tikTokWebhookEvent.findUnique({ where: { id: data.webhookEventId } });
     if (!event) return;
     await prisma.tikTokWebhookEvent.update({
@@ -278,8 +297,8 @@ const webhookRetryWorker = new Worker(
 
 const deadLetterWorker = new Worker(
   JobName.TikTokWebhookDeadLetter,
-  async (job) => {
-    const data = job.data as { webhookEventId: string; reason: string };
+  async (job: Job<DeadLetterJobData>) => {
+    const data = job.data;
     await prisma.tikTokWebhookEvent.update({
       where: { id: data.webhookEventId },
       data: { processStatus: "DEAD_LETTER", lastError: data.reason }
@@ -289,12 +308,12 @@ const deadLetterWorker = new Worker(
 );
 
 for (const worker of [shopWorker, tiktokWorker, webhookRetryWorker, deadLetterWorker]) {
-  worker.on("completed", (job) => {
+  worker.on("completed", (job: Job<unknown>) => {
     console.log(`completed ${job.name}:${job.id}`);
   });
-  worker.on("failed", async (job, err) => {
-    if (job?.name === JobName.TikTokWebhookRefresh) {
-      const data = job.data as { webhookEventId?: string };
+  worker.on("failed", async (job: Job<unknown> | undefined, err) => {
+    if (job && job.name === JobName.TikTokWebhookRefresh) {
+      const data = job.data as TikTokSyncJobData;
       if (data.webhookEventId) {
         const event = await prisma.tikTokWebhookEvent.findUnique({ where: { id: data.webhookEventId } });
         const attempts = (event?.attempts ?? 0) + 1;
